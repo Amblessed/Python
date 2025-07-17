@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    environment {
+        PYTHON_ENV = 'venv'
+        ALLURE_RESULTS = 'allure-results'
+    }
+
+    stages {
+        stage('Setup') {
+            steps {
+                echo '🔧 Creating and activating virtual environment (Windows)'
+                bat '''
+                    python -m venv %PYTHON_ENV%
+                    call %PYTHON_ENV%\\Scripts\\activate.bat
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                echo '🧪 Running tests with Allure output'
+                bat '''
+                    call %PYTHON_ENV%\\Scripts\\activate.bat
+                    pytest --alluredir=%ALLURE_RESULTS%
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            echo '📊 Publishing Allure Report'
+            allure includeProperties: false, jdk: '', results: [[path: "${ALLURE_RESULTS}"]]
+        }
+    }
+}
